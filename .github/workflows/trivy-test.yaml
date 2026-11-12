@@ -1,0 +1,87 @@
+name: Trivy Build and Scan Test
+
+on:
+  push:
+    branches:
+      - chance-task
+    paths:
+      - '.github/workflows/trivy-test.yaml'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: 'projects/816257685787/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider'
+          service_account: 'github-action-runner@online-boutique-ci.iam.gserviceaccount.com'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Install Skaffold
+        run: |
+          curl -fsSL https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64 -o skaffold
+          chmod +x skaffold
+          sudo install skaffold /usr/local/bin/skaffold
+
+      - name: Build and Push Images
+        env:
+          PROJECT_ID: online-boutique-ci
+        run: |
+          set -euo pipefail
+          gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+          skaffold config set --global local-cluster false
+          skaffold build \
+            --file-output=build-artifacts.json \
+            --default-repo=us-central1-docker.pkg.dev/${PROJECT_ID}/microservices-demo \
+            --tag="${GITHUB_SHA}-${GITHUB_RUN_ID}" \
+            --push \
+            -p network-policies
+
+      - name: Install Trivy
+        run: |
+          set -euo pipefail
+          TRIVY_VERSION="0.76.2"
+          curl -fsSL \
+            "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" \
+            -o /tmp/trivy.tar.gz
+          tar -xzf /tmp/trivy.tar.gz -C /tmp trivy
+          sudo install /tmp/trivy /usr/local/bin/trivy
+
+      - name: Scan Built Images
+        run: |
+          set -euo pipefail
+          test -s build-artifacts.json
+          mapfile -t IMAGES < <(jq -r '.builds[].tag // empty' build-artifacts.json)
+
+          if [ "${#IMAGES[@]}" -ne 12 ]; then
+            echo "ERROR: Expected 12 images, found ${#IMAGES[@]}."
+            exit 1
+          fi
+
+          for IMAGE in "${IMAGES[@]}"; do
+            echo "Scanning ${IMAGE}"
+            trivy image \
+              --scanners vuln \
+              --severity HIGH,CRITICAL \
+              --exit-code 1 \
+              "${IMAGE}"
+          done
+
+          echo "All 12 images passed the configured Trivy gate."

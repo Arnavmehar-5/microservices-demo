@@ -47,6 +47,16 @@ WORKDIR /email_server
 # Grab packages from builder
 COPY --from=builder /usr/local/lib/python3.14/ /usr/local/lib/python3.14/
 
+# pip and setuptools are only needed at build time; the service never uses them at runtime
+RUN rm -rf \
+      /usr/local/lib/python3.14/site-packages/pip \
+      /usr/local/lib/python3.14/site-packages/pip-*.dist-info \
+      /usr/local/lib/python3.14/site-packages/setuptools \
+      /usr/local/lib/python3.14/site-packages/setuptools-*.dist-info \
+      /usr/local/lib/python3.14/site-packages/_distutils_hack \
+      /usr/local/lib/python3.14/ensurepip/_bundled \
+      /usr/local/bin/pip* \
+      /usr/local/bin/easy_install*
 # Add the application
 COPY . .
 

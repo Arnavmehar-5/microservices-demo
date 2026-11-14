@@ -38,9 +38,9 @@ ENV PYTHONUNBUFFERED=1
 # Enable Profiler
 ENV ENABLE_PROFILER=1
 
-RUN apk update \
-    && apk add --no-cache libstdc++ \
-    && rm -rf /var/cache/apk/*
+
+RUN apk upgrade --no-cache \
+    && apk add --no-cache libstdc++
 
 WORKDIR /email_server
 

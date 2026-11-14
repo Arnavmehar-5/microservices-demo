@@ -1,15 +1,14 @@
+
 name: Trivy Build and Scan Test
 
 on:
   push:
     branches:
       - chance-task
-    paths:
-      - '.github/workflows/trivy-test.yaml'
 
 permissions:
   contents: read
-  id-token: write
+  packages: write
 
 jobs:
   build-and-scan:
@@ -19,14 +18,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v3
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          workload_identity_provider: 'projects/816257685787/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider'
-          service_account: 'github-action-runner@online-boutique-ci.iam.gserviceaccount.com'
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -36,20 +33,18 @@ jobs:
 
       - name: Install Skaffold
         run: |
+          set -euo pipefail
           curl -fsSL https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64 -o skaffold
           chmod +x skaffold
           sudo install skaffold /usr/local/bin/skaffold
 
       - name: Build and Push Images
-        env:
-          PROJECT_ID: online-boutique-ci
         run: |
           set -euo pipefail
-          gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
           skaffold config set --global local-cluster false
           skaffold build \
             --file-output=build-artifacts.json \
-            --default-repo=us-central1-docker.pkg.dev/${PROJECT_ID}/microservices-demo \
+            --default-repo=ghcr.io/arnavmehar-5/microservices-demo \
             --tag="${GITHUB_SHA}-${GITHUB_RUN_ID}" \
             --push \
             -p network-policies

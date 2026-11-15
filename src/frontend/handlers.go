@@ -76,17 +76,28 @@ func (fe *frontendServer) homeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type productView struct {
-		Item  *pb.Product
-		Price *pb.Money
+		Item    *pb.Product
+		Price   *pb.Money
+		Matches bool
 	}
+	searchQuery := normalizeSearchQuery(r.URL.Query().Get("q"))
 	ps := make([]productView, len(products))
+	searchMatches := 0
 	for i, p := range products {
 		price, err := fe.convertCurrency(r.Context(), p.GetPriceUsd(), currentCurrency(r))
 		if err != nil {
 			renderHTTPError(log, r, w, errors.Wrapf(err, "failed to do currency conversion for product %s", p.GetId()), http.StatusInternalServerError)
 			return
 		}
-		ps[i] = productView{p, price}
+		matches := productMatchesQuery(p.GetName(), searchQuery)
+		if matches {
+			searchMatches++
+		}
+		ps[i] = productView{
+			Item:    p,
+			Price:   price,
+			Matches: matches,
+		}
 	}
 
 	// Set ENV_PLATFORM (default to local if not set; use env var if set; otherwise detect GCP, which overrides env)_
@@ -108,12 +119,15 @@ func (fe *frontendServer) homeHandler(w http.ResponseWriter, r *http.Request) {
 	plat.setPlatformDetails(strings.ToLower(env))
 
 	if err := templates.ExecuteTemplate(w, "home", injectCommonTemplateData(r, map[string]interface{}{
-		"show_currency": true,
-		"currencies":    currencies,
-		"products":      ps,
-		"cart_size":     cartSize(cart),
-		"banner_color":  os.Getenv("BANNER_COLOR"), // illustrates canary deployments
-		"ad":            fe.chooseAd(r.Context(), []string{}, log),
+		"show_currency":  true,
+		"currencies":     currencies,
+		"products":       ps,
+		"search_query":   searchQuery,
+		"search_matches": searchMatches,
+		"product_count":  len(products),
+		"cart_size":      cartSize(cart),
+		"banner_color":   os.Getenv("BANNER_COLOR"), // illustrates canary deployments
+		"ad":             fe.chooseAd(r.Context(), []string{}, log),
 	})); err != nil {
 		log.Error(err)
 	}

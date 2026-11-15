@@ -37,16 +37,34 @@
 
       <div class="col-12 col-lg-12 px-10-percent">
 
-        <div class="row hot-products-row px-xl-6">
+        <div id="product-grid" class="row hot-products-row px-xl-6">
 
-          <div class="col-12">
+          <div class="col-12 hot-products-heading">
             <h3>Hot Products</h3>
+            <div class="product-search" role="search">
+              <label class="sr-only" for="product-search-input">Search products</label>
+              <span class="product-search-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 4.2 4.2"></path></svg>
+              </span>
+              <input id="product-search-input" type="search" value="{{ $.search_query }}" placeholder="Search products..." autocomplete="off" aria-controls="product-grid" aria-describedby="product-search-status">
+              <button id="product-search-clear" class="product-search-clear" type="button" aria-label="Clear product search" {{ if not $.search_query }}hidden{{ end }}>Clear</button>
+            </div>
+            <p id="product-search-status" class="product-search-status" role="status" aria-live="polite" aria-atomic="true">
+              {{ if $.search_query }}
+                {{ if eq $.search_matches 0 }}No products found{{ else }}Showing {{ $.search_matches }} of {{ $.product_count }} products{{ end }}
+              {{ else }}Showing all {{ $.product_count }} products{{ end }}
+            </p>
+            <div id="product-search-empty" class="product-search-empty" {{ if gt $.search_matches 0 }}hidden{{ end }}>
+              <strong>No products found</strong>
+              <p>Try another search term or clear your search to see all products.</p>
+              <button class="product-search-empty-clear" type="button">Clear search</button>
+            </div>
           </div>
 
           {{ range $.products }}
-          <div class="col-md-4 hot-product-card">
+          <div class="col-md-4 hot-product-card" {{ if not .Matches }}hidden{{ end }}>
             <a href="{{ $.baseUrl }}/product/{{.Item.Id}}">
-              <img loading="lazy" src="{{ $.baseUrl }}{{.Item.Picture}}">
+              <img loading="lazy" src="{{ $.baseUrl }}{{.Item.Picture}}" alt="{{ .Item.Name }}">
               <div class="hot-product-card-img-overlay"></div>
             </a>
             <div>
@@ -71,6 +89,8 @@
   </div>
 
 </main>
+
+<script src="{{ $.baseUrl }}/static/js/product-search.js" defer></script>
 
 <!-- Footer for smaller screens. -->
 <div class="d-lg-none">

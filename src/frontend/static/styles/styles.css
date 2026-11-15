@@ -316,10 +316,112 @@ main {
 }
 
 .hot-products-row h3 {
-  margin-bottom: 32px;
+  margin-bottom: 12px;
   margin-top: 56px;
   font-size: 36px;
   font-weight: normal;
+}
+
+.hot-products-heading {
+  margin-bottom: 30px;
+}
+
+.product-search {
+  position: relative;
+  width: min(100%, 480px);
+}
+
+.product-search input {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 82px 10px 44px;
+  border: 1px solid #b9aab1;
+  border-radius: 6px;
+  background: #fff;
+  color: #111;
+  font: inherit;
+}
+
+.product-search input::placeholder {
+  color: #62565b;
+  opacity: 1;
+}
+
+.product-search input:focus {
+  border-color: #853B5C;
+  outline: 3px solid rgba(133, 59, 92, 0.24);
+  outline-offset: 1px;
+}
+
+.product-search-icon {
+  position: absolute;
+  top: 13px;
+  left: 14px;
+  width: 22px;
+  height: 22px;
+  color: #62565b;
+  pointer-events: none;
+}
+
+.product-search-icon svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+
+.product-search-clear,
+.product-search-empty-clear {
+  border: 0;
+  background: transparent;
+  color: #6f2547;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.product-search-clear {
+  position: absolute;
+  top: 13px;
+  right: 12px;
+  padding: 2px 4px;
+}
+
+.product-search-clear:focus-visible,
+.product-search-empty-clear:focus-visible {
+  outline: 3px solid #853B5C;
+  outline-offset: 2px;
+}
+
+.product-search-status {
+  margin: 8px 0 0;
+  color: #62565b;
+  font-size: 14px;
+}
+
+.product-search-empty {
+  margin: 14px 0 22px;
+  padding: 18px 20px;
+  border: 1px solid #e4dce0;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.product-search-empty strong {
+  font-size: 18px;
+}
+
+.product-search-empty p {
+  margin: 6px 0 10px;
+}
+
+.hot-product-card[hidden],
+.product-search-clear[hidden],
+.product-search-empty[hidden] {
+  display: none !important;
 }
 
 .hot-products-row {
@@ -366,6 +468,17 @@ main {
 
 .hot-product-card:hover .hot-product-card-img-overlay {
   background-color: rgba(71, 0, 29, 0.2);
+}
+
+@media (max-width: 575.98px) {
+  .hot-products-row h3 {
+    margin-top: 36px;
+    font-size: 30px;
+  }
+
+  .product-search {
+    width: 100%;
+  }
 }
 
 /*
